@@ -84,7 +84,9 @@ function Home() {
           Plan This Trip 🧭
         </button>
       </form>
+      <div class="w-screen">
       <Footer/>
+      </div>
     </div>
   );
 }
