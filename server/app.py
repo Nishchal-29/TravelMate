@@ -11,9 +11,10 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-# Load environment variables from .env
+# Load environment variables
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_PLACES_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY")
 
 # Setup Amadeus client
 amadeus = Client(
@@ -21,7 +22,7 @@ amadeus = Client(
     client_secret=os.getenv("AMADEUS_API_SECRET")
 )
 
-# Setup FastAPI
+# Setup FastAPI app
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -31,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# LangChain LLM setup
+# LangChain setup
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash",
     temperature=0.7,
@@ -94,7 +95,6 @@ def chat(req: ChatRequest):
         session_memories[req.session_id] = ConversationBufferMemory(
             memory_key="history", input_key="input", return_messages=False
         )
-
     memory = session_memories[req.session_id]
     chain = ConversationChain(llm=llm, prompt=prompt, memory=memory)
     response = chain.run(req.message)
@@ -111,7 +111,6 @@ async def get_flights(
 ):
     origin = get_iata_code(from_)
     destination = get_iata_code(to)
-
     if not origin or not destination:
         return {
             "error": f"Could not determine IATA code(s). Origin: {origin}, Destination: {destination}"
@@ -119,7 +118,6 @@ async def get_flights(
 
     try:
         print(f"Fetching flights from {origin} to {destination} on {date}")
-
         response = amadeus.shopping.flight_offers_search.get(
             originLocationCode=origin,
             destinationLocationCode=destination,
@@ -127,7 +125,6 @@ async def get_flights(
             adults=1,
             max=100
         )
-
         results = []
         for offer in response.data:
             itinerary = offer["itineraries"][0]["segments"][0]
@@ -144,12 +141,12 @@ async def get_flights(
                 "currency": offer["price"]["currency"]
             }
             results.append(flight_info)
-
         return {"flights": results}
-
     except ResponseError as e:
         print(f"[Amadeus API ERROR] {e}")
         return {"error": str(e)}
+
+# ==== TRAIN ROUTE ====
 
 @app.get("/trains")
 async def get_trains(
@@ -183,9 +180,64 @@ async def get_trains(
             "duration": duration,
             "fare": fare
         })
-        print(results)
     return {"trains": results}
+
+# ==== HOTELS (Google Places API) ====
+
+@app.get("/hotels")
+def get_hotels(to: str = Query(...)):
+    url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query=hotels+in+{to}&key={GOOGLE_PLACES_API_KEY}"
+    res = requests.get(url)
+    data = res.json()
+    hotels = []
+    for place in data.get("results", []):
+        hotels.append({
+            "name": place.get("name"),
+            "address": place.get("formatted_address"),
+            "rating": place.get("rating"),
+            "image": f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={place['photos'][0]['photo_reference']}&key={GOOGLE_PLACES_API_KEY}" if place.get("photos") else None
+        })
+    return {"hotels": hotels}
+
+# ==== RESTAURANTS (Google Places API) ====
+
+@app.get("/restaurants")
+def get_restaurants(to: str = Query(...)):
+    url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query=restaurants+in+{to}&key={GOOGLE_PLACES_API_KEY}"
+    res = requests.get(url)
+    data = res.json()
+    restaurants = []
+    for place in data.get("results", []):
+        restaurants.append({
+            "name": place.get("name"),
+            "address": place.get("formatted_address"),
+            "rating": place.get("rating"),
+            "image": f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={place['photos'][0]['photo_reference']}&key={GOOGLE_PLACES_API_KEY}" if place.get("photos") else None
+        })
+    return {"restaurants": restaurants}
+
+# ==== BEST PLACES (Google Places API - Tourist Attractions) ====
+
+@app.get("/places")
+def get_best_places(to: str = Query(...)):
+    url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query=tourist+attractions+in+{to}&key={GOOGLE_PLACES_API_KEY}"
+    res = requests.get(url)
+    data = res.json()
+
+    best_places = []
+    for place in data.get("results", []):
+        best_places.append({
+            "name": place.get("name"),
+            "address": place.get("formatted_address"),
+            "rating": place.get("rating"),
+            "image": f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={place['photos'][0]['photo_reference']}&key={GOOGLE_PLACES_API_KEY}" if place.get("photos") else None,
+            "location": place.get("geometry", {}).get("location", {})
+        })
+
+    return {"places": best_places}
+
+# ==== RUN ====
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
