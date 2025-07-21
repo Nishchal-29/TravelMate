@@ -22,21 +22,33 @@ export default function Details() {
 
   useEffect(() => {
     const dstn = localStorage.getItem('destination');
-    if (dstn) setCity(dstn);
+    if (dstn && dstn !== 'null') setCity(dstn);
   }, []);
 
   const fetchResults = async () => {
+    if (!city.trim()) return;
     setLoading(true);
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/${category}?to=${city}`
       );
-      setResults(res.data[category] || []);
+      const keyMap = {
+        hotels: 'hotels',
+        restaurants: 'restaurants',
+        places: 'places',
+      };
+      setResults(res.data[keyMap[category]] || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       alert('Something went wrong. Please try again.');
     }
     setLoading(false);
+  };
+
+  const getHeading = () => {
+    if (category === 'hotels') return 'Hotels';
+    if (category === 'restaurants') return 'Restaurants';
+    return 'Tourist Attractions';
   };
 
   return (
@@ -60,10 +72,10 @@ export default function Details() {
         >
           <Container className="text-white text-center px-4">
             <h1 style={{ fontSize: 'clamp(2rem, 5vw, 4rem)', fontWeight: 'bold' }}>
-              Explore Hotels & Restaurants
+              Explore Hotels, Restaurants & Attractions
             </h1>
             <p style={{ fontSize: 'clamp(1rem, 2.5vw, 1.4rem)', marginTop: '20px' }}>
-              Discover top-rated places in {city || 'your city'} for a perfect stay and dine
+              Discover top-rated places in {city || 'your city'} for a perfect stay, dine & explore
             </p>
 
             {/* Search Form */}
@@ -78,7 +90,7 @@ export default function Details() {
                 <Col xs={12} md={5}>
                   <Form.Control
                     type="text"
-                    placeholder="Enter city (e.g., Delhi)"
+                    placeholder="Enter city name"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
@@ -95,6 +107,9 @@ export default function Details() {
                     </ToggleButton>
                     <ToggleButton id="rest" value="restaurants" variant="outline-light">
                       Restaurants
+                    </ToggleButton>
+                    <ToggleButton id="place" value="places" variant="outline-light">
+                      Best Places
                     </ToggleButton>
                   </ToggleButtonGroup>
                 </Col>
@@ -114,7 +129,7 @@ export default function Details() {
             {results.length > 0 ? (
               <>
                 <h2 className="text-center mb-4">
-                  Top {category === 'hotels' ? 'Hotels' : 'Restaurants'} in {city}
+                  Top {getHeading()} in {city}
                 </h2>
                 <Row xs={1} md={2} lg={3} className="g-4">
                   {results.map((item, idx) => (
@@ -129,6 +144,11 @@ export default function Details() {
                         <Card.Body>
                           <Card.Title>{item.name || 'Unnamed'}</Card.Title>
                           <Card.Text>{item.address || 'No address available'}</Card.Text>
+                          {item.rating && (
+                            <Card.Text>
+                              ⭐ <strong>{item.rating}</strong>
+                            </Card.Text>
+                          )}
                         </Card.Body>
                       </Card>
                     </Col>
@@ -136,7 +156,7 @@ export default function Details() {
                 </Row>
               </>
             ) : (
-              <p className="text-center">No results yet. Enter a city and search.</p>
+              <p className="text-center text-dark fs-5">No results yet. Enter a city and search.</p>
             )}
           </Container>
         </div>
