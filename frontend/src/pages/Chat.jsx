@@ -27,7 +27,7 @@ export default function Chat() {
 
   const [showTrainModal, setShowTrainModal] = useState(false);
   const [trainOptions, setTrainOptions] = useState([]);
-
+ localStorage.setItem("destination", to);
 const cityAliases = {
   bangalore: "Bengaluru",
   bengaluru: "Bangalore",
