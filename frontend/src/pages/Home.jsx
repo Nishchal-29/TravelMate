@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import citiesData from "../assets/indian_cities.json";
 import { Footer } from '../components/footer';
+import QR from "../assets/TravelMate_QR_.jpg";
+import TravelMateLogo from "../assets/TravelMate.svg";
+import { Modal, Button, Form } from "react-bootstrap";
 
 const citiesInIndia = citiesData.map((c) => c.name);
 
@@ -55,6 +58,20 @@ function Home() {
   const [to, setTo] = useState("");
   const [date, setDate] = useState("");
 
+  const [showModal, setShowModal] = useState(false);
+  const [adminName, setAdminName] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  const handleAdminLogin = () => {
+    if (adminPassword === "travelmate") {
+      navigate("/admin");
+      setShowModal(false);
+    } else {
+      setLoginError("Incorrect password!");
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!from || !to || !date) return;
@@ -65,12 +82,65 @@ function Home() {
 
   return (
     <div style={styles.container}>
+      {/* Admin Login Button */}
+      <div style={styles.adminBtnContainer}>
+        <button
+          onClick={() => setShowModal(true)}
+          style={styles.adminButton}
+        >
+          Admin Login
+        </button>
+      </div>
+
+      {/* Admin Login Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Admin Login</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Admin Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={adminName}
+                onChange={(e) => setAdminName(e.target.value)}
+                placeholder="Enter admin name"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="Enter password"
+              />
+            </Form.Group>
+
+            {loginError && <p style={{ color: "red" }}>{loginError}</p>}
+
+            <Button variant="primary" onClick={handleAdminLogin}>
+              Login
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Hero Section */}
+      <div style={styles.travelMateSection}>
+        <img src={TravelMateLogo} alt="TravelMate Logo" width="60" style={{ marginBottom: "10px" }} />
+        <h2 style={styles.brandName}>TravelMate</h2>
+        <p style={styles.tagline}>Your Smart AI Travel Bot</p>
+      </div>
+
       <h1 style={styles.heading}>Plan Your Dream Trip ✈️</h1>
       <p style={styles.subtext}>
         Choose any city in India and let our AI bot help you plan a magical journey.
       </p>
 
-        <form onSubmit={handleSubmit} style={{ ...styles.card, marginBottom: '40px' }}>
+      <form onSubmit={handleSubmit} style={{ ...styles.card, marginBottom: '40px' }}>
         <AutocompleteInput label="From (City)" value={from} onChange={setFrom} />
         <AutocompleteInput label="To (City)" value={to} onChange={setTo} />
         <input
@@ -84,8 +154,15 @@ function Home() {
           Plan This Trip 🧭
         </button>
       </form>
-      <div class="w-screen">
-      <Footer/>
+
+      <div style={styles.qrContainer}>
+        <h3 style={styles.qrHeading}>Chat with our Travel Bot on WhatsApp</h3>
+        <p style={{ color: "#4b5563" }}>Scan the QR code on your mobile device</p>
+        <img src={QR} alt="TravelMate WhatsApp QR" style={styles.qrImage} />
+      </div>
+
+      <div className="w-screen">
+        <Footer />
       </div>
     </div>
   );
@@ -99,9 +176,36 @@ const styles = {
     background: "linear-gradient(to bottom right, #bfdbfe, #f3e8ff, #fecdd3)",
     display: "flex",
     flexDirection: "column",
-    justifyContent: "center",
     alignItems: "center",
     padding: "2rem",
+    position: "relative",
+  },
+  adminBtnContainer: {
+    position: "absolute",
+    top: "20px",
+    right: "30px",
+  },
+  adminButton: {
+    backgroundColor: "#1f2937",
+    color: "#fff",
+    border: "none",
+    padding: "0.5rem 1rem",
+    borderRadius: "8px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+  travelMateSection: {
+    textAlign: "center",
+    marginBottom: "1.5rem",
+  },
+  brandName: {
+    fontFamily: "'Pacifico', cursive",
+    fontSize: "2.2rem",
+    color: "#1f2937",
+  },
+  tagline: {
+    fontSize: "1.1rem",
+    color: "#6b7280",
   },
   heading: {
     fontSize: "2.5rem",
@@ -144,7 +248,6 @@ const styles = {
     fontSize: "1rem",
     fontWeight: "600",
     cursor: "pointer",
-    transition: "background-color 0.3s ease",
   },
   dropdownList: {
     position: "absolute",
@@ -164,5 +267,23 @@ const styles = {
     padding: "0.5rem 1rem",
     cursor: "pointer",
     transition: "background-color 0.2s",
+  },
+  qrContainer: {
+    textAlign: "center",
+    marginTop: "40px",
+    marginBottom: "60px",
+  },
+  qrHeading: {
+    fontSize: "1.5rem",
+    fontWeight: "600",
+    color: "#1f2937",
+    marginBottom: "0.5rem",
+  },
+  qrImage: {
+    width: "200px",
+    height: "200px",
+    marginTop: "10px",
+    borderRadius: "12px",
+    border: "1px solid #ccc",
   },
 };
