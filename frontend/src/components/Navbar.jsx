@@ -2,6 +2,7 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import { useNavigate, useLocation } from 'react-router-dom';
+import TravelMateLogo from "../assets/TravelMate.svg";
 
 export default function Navbar1() {
   const navigate = useNavigate();
@@ -22,14 +23,13 @@ export default function Navbar1() {
       style={{ paddingTop: '8px', paddingBottom: '8px' }}
     >
       <Container>
-        {/* Logo + Brand */}
         <Navbar.Brand
           onClick={() => navigate('/')}
           className="d-flex align-items-center cursor-pointer"
           style={{ cursor: 'pointer' }}
         >
           <img
-            src="/logo.png"
+            src={TravelMateLogo}
             width="40"
             height="40"
             className="d-inline-block align-top me-2"
